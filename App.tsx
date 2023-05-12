@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { StyleSheet, View, Text, Modal, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
 import MapView, { LatLng, MapPressEvent, Marker } from 'react-native-maps';
 
 type Weather = {
@@ -12,9 +12,11 @@ type Weather = {
 export default function App() {
   const [coordinates, setCoordinates] = useState<LatLng | null>(null);
   const [weather, setWeather] = useState<Weather| null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const getWeather = async (coords: LatLng): Promise<void> => {
     try {   
+      setLoading(true);
       const result = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&timezone=GMT&daily=precipitation_probability_max`, {
         method: 'GET',
         headers: {
@@ -34,6 +36,8 @@ export default function App() {
       }
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -59,31 +63,37 @@ export default function App() {
       </MapView>
       <Modal 
         transparent={true} 
-        visible={weather !== null} 
+        visible={weather !== null ||  loading} 
         animationType='fade'
+        statusBarTranslucent={true}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalView}>
-            <Text>Latitude: {coordinates?.latitude} | Longitude: {coordinates?.longitude}</Text>
+          {loading ? (
             <View>
-              <Text style={styles.infoIcon}>🌡️</Text>
-              <Text style={styles.info}>{weather?.temperature} °C</Text>
+              <ActivityIndicator size={'large'} />
             </View>
-            <View>
-              <Text style={styles.infoIcon}>💨</Text>
-              <Text style={styles.info}>{weather?.windSpeed} Km/h</Text>
+          ) : (
+            <View style={styles.modalView}>
+              <View>
+                <Text style={styles.infoIcon}>🌡️</Text>
+                <Text style={styles.info}>{weather?.temperature} °C</Text>
+              </View>
+              <View>
+                <Text style={styles.infoIcon}>💨</Text>
+                <Text style={styles.info}>{weather?.windSpeed} Km/h</Text>
+              </View>
+              <View>
+                <Text style={styles.infoIcon}>🌧️</Text>
+                <Text style={styles.info}>{weather?.precipitationProbability}%</Text>
+              </View>
+              <TouchableOpacity style={styles.button} onPress={() => {
+                setWeather(null);
+                setCoordinates(null);
+              }}>
+                <Text style={styles.textButton}>Fechar</Text>
+              </TouchableOpacity>
             </View>
-            <View>
-              <Text style={styles.infoIcon}>🌧️</Text>
-              <Text style={styles.info}>{weather?.precipitationProbability}%</Text>
-            </View>
-            <TouchableOpacity style={styles.button} onPress={() => {
-              setWeather(null);
-              setCoordinates(null);
-            }}>
-              <Text style={styles.textButton}>Fechar</Text>
-            </TouchableOpacity>
-          </View>
+          )}
         </View>
       </Modal>
     </View>
@@ -98,6 +108,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)'
   },
   modalView: {
     width: '80%',
