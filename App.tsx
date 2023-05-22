@@ -14,7 +14,7 @@ export default function App() {
   const [weather, setWeather] = useState<Weather| null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const getWeather = async (coords: LatLng): Promise<void> => {
+  async function getWeather(coords: LatLng): Promise<void> {
     try {   
       setLoading(true);
       const result = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&timezone=GMT&daily=precipitation_probability_max`, {
@@ -41,7 +41,7 @@ export default function App() {
     }
   }
 
-  const handleMapPress = async (event: MapPressEvent): Promise<void> => {
+  async function handleMapPress(event: MapPressEvent): Promise<void> {
     const latitude = Number(event.nativeEvent.coordinate.latitude.toFixed(2));
     const longitude = Number(event.nativeEvent.coordinate.longitude.toFixed(2));
     setCoordinates({ latitude, longitude });
